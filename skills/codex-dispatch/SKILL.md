@@ -25,14 +25,35 @@ All Codex worker status files go to `<project-root>/.ai-team/outputs/`:
 
 ## Pre-Dispatch Checklist
 
-**Before dispatching:** Verify the filled prompt contains no remaining `[PLACEHOLDER: ...]` strings. A task sent with unfilled placeholders will silently fail or produce irrelevant output.
+**Before dispatching:**
+- Build a dispatch manifest using `skills/team/dispatch-manifest.schema.md`.
+- Verify the manifest and the filled prompt contain no remaining `[PLACEHOLDER: ...]` strings.
+- Use manifest fields, not ad hoc shell literals, when assembling the Codex command.
+
+## Pre-Dispatch: Build Manifest
+
+Before the canonical invocation, the coordinator writes a dispatch manifest for this worker. The manifest is the source of truth for:
+
+- `task_id`
+- `provider=codex`
+- `mode=executor` or `mode=coworker`
+- `model`
+- `reasoning_effort`
+- `input_files`
+- `output_path`
+- `timeout_seconds`
+- `verification_command`
+- `template_used`
+
+The coordinator must validate that every manifest field is filled, every referenced path is absolute, and the prompt generated from `template_used` contains no placeholders before launching Codex.
 
 
 ## Canonical Invocation
 
 ```bash
 codex exec \
-  -m gpt-5.3-codex \
+  -m "$MODEL" \
+  -c "model_reasoning_effort=\"$REASONING_EFFORT\"" \
   --full-auto \
   --ephemeral \
   -C "$PROJECT_DIR" \
@@ -136,7 +157,7 @@ Codex can also serve as a **coworker** — an informed reviewer that reads the c
 
 | Template | When | Input |
 |---|---|---|
-| `tasks/plan-review.md` | Before execution — validate a plan against real code | Coordinator's proposed plan + key files |
+| `tasks/plan-review.md` | Before execution — validate a dispatch plan against real code | Completed dispatch manifest + referenced files |
 | `tasks/output-review.md` | After execution — verify implementation quality | Worker's diff + original task intent |
 
 **Coworker vs Executor:**
@@ -205,17 +226,27 @@ Schema example for test failure report:
 Codex runs as a foreground process that exits when done. The coordinator's job:
 
 ```bash
-# 1. Write task
+# 0. Build dispatch manifest
+# manifest.task_id=<id>
+# manifest.model=<model>
+# manifest.reasoning_effort=<effort>
+# manifest.output_path=<project-root>/.ai-team/outputs/codex-<id>-status.json
+# manifest.timeout_seconds=300
+# manifest.template_used=skills/codex-dispatch/tasks/<template>.md
+
+# 1. Write task from the filled template referenced by manifest.template_used
 echo "..." > /tmp/task-<id>/prompt.txt
 
-# 2. Launch with timeout
-timeout 300 codex exec -m gpt-5.3-codex --full-auto --ephemeral \
+# 2. Verify manifest + prompt have no placeholders, then launch with timeout
+timeout "$TIMEOUT_SECONDS" codex exec -m "$MODEL" \
+  -c "model_reasoning_effort=\"$REASONING_EFFORT\"" \
+  --full-auto --ephemeral \
   -C "$PROJECT_DIR" --color never \
   "$(cat /tmp/task-<id>/prompt.txt)"
 EXIT=$?
 
-# 3. Read result
-STATUS_FILE="<project-root>/.ai-team/outputs/codex-<id>-status.json"
+# 3. Read result from manifest.output_path and run manifest.verification_command
+STATUS_FILE="$OUTPUT_PATH"
 if   [ $EXIT -eq 0 ]   && [ -f "$STATUS_FILE" ]; then  # success
 elif [ $EXIT -eq 124 ]                                  ; then  # hung — timeout killed it
 elif [ $EXIT -ne 0 ]   && [ -f "$STATUS_FILE" ]; then  # self-reported failure
@@ -243,14 +274,16 @@ fi
 
 | Mode | When | How |
 |---|---|---|
-| Foreground | < 2 min, simple targeted task | `timeout 120 codex exec ...` — Claude blocks and waits |
+| Foreground | < 2 min, simple targeted task | `timeout "$TIMEOUT_SECONDS" codex exec ...` — Claude blocks and waits |
 | Background | > 2 min, parallel work possible | tmux session — Claude continues other work, polls status |
 
 **Background launch (tmux):**
 ```bash
 WORKER_ID="codex-$(date +%s)"
 tmux new-session -d -s "$WORKER_ID" \
-  "timeout 600 codex exec -m gpt-5.3-codex --full-auto --ephemeral \
+  "timeout '$TIMEOUT_SECONDS' codex exec -m '$MODEL' \
+   -c 'model_reasoning_effort=\"$REASONING_EFFORT\"' \
+   --full-auto --ephemeral \
    -C '$PROJECT_DIR' --color never \
    '$(cat /tmp/task-prompt.txt)'"
 ```

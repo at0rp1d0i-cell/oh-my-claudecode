@@ -99,11 +99,11 @@ Incoming task
   ├─ Requires web research (web_search + web_fetch)? → use :gemini worker
   ├─ Requires architectural decision or design?     → use analyst/architect Claude sub-agent (NOT external worker)
   ├─ Mixed: analyze then implement?
-  │     → Step 1: gemini-dispatch for analysis → write report to .ai-team/outputs/
+  │     → Step 1: gemini-dispatch for analysis → write report to <project-root>/.ai-team/outputs/
   │     → Step 2: codex-dispatch for implementation using report as context
   └─ Default coding task → use :codex worker
 
-After routing, optionally attach a Coworker review (codex-dispatch, gpt-5.4):
+After routing, optionally attach a Coworker review (codex-dispatch coworker task):
 
   Plan Review (before execution) — attach when ANY of:
   ├─ Plan touches 5+ files or crosses module boundaries
@@ -127,8 +127,7 @@ After routing, optionally attach a Coworker review (codex-dispatch, gpt-5.4):
 - Tasks requiring team communication protocol → use internal Claude sub-agents (executor, debugger, etc.)
 - Tasks spanning multiple repositories → split and sequence
 
-**Codex model:** `gpt-5.3-codex` (default), `gpt-5.4` (complex tasks)
-**Gemini model:** `gemini-3`
+**Worker models:** See project `CLAUDE.md` under `## AI Team config` or ask the user.
 
 ## Project Team Config Check
 
@@ -652,8 +651,8 @@ Tasks are tagged with an execution mode during decomposition:
 | Execution Mode | Provider | Capabilities |
 |---------------|----------|-------------|
 | `claude_worker` | Claude agent | Full Claude Code tool access (Read/Write/Edit/Bash/Task). Best for tasks needing Claude's reasoning + iterative tool use. |
-| `codex_worker` | Codex CLI (tmux pane) | Full filesystem access in working_directory. Runs autonomously via tmux pane. Best for code review, security analysis, refactoring, architecture. Requires `npm install -g @openai/codex`. |
-| `gemini_worker` | Gemini CLI (tmux pane) | Full filesystem access in working_directory. Runs autonomously via tmux pane. Best for UI/design work, documentation, large-context tasks. Requires `npm install -g @google/gemini-cli`. |
+| `codex_worker` | Codex CLI (tmux pane) | Full filesystem access in working_directory. Runs autonomously via tmux pane. Best for targeted implementation, refactoring, and write-test-fix execution loops once the task is already defined. Requires `npm install -g @openai/codex`. |
+| `gemini_worker` | Gemini CLI (tmux pane) | Full filesystem access in working_directory. Runs autonomously via tmux pane. Best for large-context analysis, repo-wide pattern discovery, and web-backed research before implementation. Requires `npm install -g @google/gemini-cli`. |
 
 ### How CLI Workers Operate
 
@@ -681,7 +680,7 @@ Tmux CLI workers run in dedicated tmux panes with filesystem access. They are **
 | Refactoring (well-scoped) | CLI worker or executor agent | Autonomous execution, good at structured transforms |
 | UI/frontend implementation | designer Claude agent | Design expertise, framework idioms |
 | Large-scale documentation | writer Claude agent | Writing expertise + large context for consistency |
-| Build/test iteration loops | Claude teammate | Needs Bash tool + iterative fix cycles |
+| Build/test iteration loops | codex_worker | Matches the routing rule for write + test + fix iteration loops |
 | Tasks needing team coordination | Claude teammate | Needs SendMessage for status updates |
 
 ### Example: Hybrid Team with CLI Workers
@@ -690,14 +689,14 @@ Tmux CLI workers run in dedicated tmux panes with filesystem access. They are **
 /team 3:executor "refactor auth module with security review"
 
 Task decomposition:
-#1 [codex_worker] Security review of current auth code -> output to .omc/research/auth-security.md
+#1 [gemini_worker] Security review of current auth code -> output to <project-root>/.ai-team/outputs/auth-security.md
 #2 [codex_worker] Refactor auth/login.ts and auth/session.ts (uses #1 findings)
 #3 [claude_worker:designer] Redesign auth UI components (login form, session indicator)
 #4 [claude_worker] Update auth tests + fix integration issues
-#5 [gemini_worker] Final code review of all changes
+#5 [codex_worker] Final code review of all changes
 ```
 
-The lead runs #1 (Codex security analysis), then #2 and #3 in parallel (Codex refactors backend, designer agent redesigns frontend), then #4 (Claude teammate handles test iteration), then #5 (Gemini final review).
+The lead runs #1 (Gemini large-context security analysis), then #2 and #3 in parallel (Codex refactors backend, designer agent redesigns frontend), then #4 (Claude teammate handles test iteration), then #5 (Codex final code review).
 
 ### Pre-flight Analysis (Optional)
 

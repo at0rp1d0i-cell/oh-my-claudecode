@@ -25,7 +25,27 @@ All Gemini worker output files go to `<project-root>/.ai-team/outputs/`:
 
 ## Pre-Dispatch Checklist
 
-**Before dispatching:** Verify the filled prompt contains no remaining `[PLACEHOLDER: ...]` strings. A task sent with unfilled placeholders will silently fail or produce irrelevant output.
+**Before dispatching:**
+- Build a dispatch manifest using `skills/team/dispatch-manifest.schema.md`.
+- Verify the manifest and the filled prompt contain no remaining `[PLACEHOLDER: ...]` strings.
+- Use manifest fields, not ad hoc shell literals, when assembling the Gemini command.
+
+## Pre-Dispatch: Build Manifest
+
+Before the canonical invocation, the coordinator writes a dispatch manifest for this worker. The manifest is the source of truth for:
+
+- `task_id`
+- `provider=gemini`
+- `mode=executor` or `mode=coworker`
+- `model`
+- `reasoning_effort`
+- `input_files`
+- `output_path`
+- `timeout_seconds`
+- `verification_command`
+- `template_used`
+
+The coordinator must validate that every manifest field is filled, every referenced path is absolute, and the prompt generated from `template_used` contains no placeholders before launching Gemini.
 
 
 ## Canonical Invocation
@@ -33,7 +53,7 @@ All Gemini worker output files go to `<project-root>/.ai-team/outputs/`:
 ```bash
 gemini \
   --approval-mode yolo \
-  -m gemini-3 \
+  -m "$MODEL" \
   -p "$(cat task.md)" \
   --output-format stream-json
 ```
@@ -41,7 +61,7 @@ gemini \
 **Critical flags:**
 - `--approval-mode yolo` — fully autonomous; more reliable than `auto_edit` (known bug: `auto_edit` ignores allow-rules for shell tools)
 - `-p "<prompt>"` — non-interactive single-shot. **NEVER use `-i`** (`--prompt-interactive`) for worker dispatch — it requires a TTY
-- `-m gemini-3` — always specify model explicitly (without this, Gemini may auto-switch mid-task)
+- `-m "$MODEL"` — pass the exact manifest-selected model explicitly (without this, Gemini may auto-switch mid-task)
 - `--output-format stream-json` — JSONL output; watch for `{"type":"result"}` event for completion
 
 ## GEMINI.md Configuration
@@ -164,11 +184,22 @@ read_many_files(["src/auth/jwt.ts", "src/auth/middleware.ts", "tests/auth.test.t
 Gemini `-p` mode always exits — it has no "hung" state. The only failure mode is writing output or not.
 
 ```bash
-timeout 180 gemini --approval-mode yolo -m gemini-3 \
+# 0. Build dispatch manifest
+# manifest.task_id=<id>
+# manifest.model=<model>
+# manifest.output_path=<project-root>/.ai-team/outputs/gemini-<id>-output.md
+# manifest.timeout_seconds=180
+# manifest.template_used=skills/gemini-dispatch/tasks/<template>.md
+
+# 1. Write task from the filled template referenced by manifest.template_used
+
+# 2. Verify manifest + prompt have no placeholders, then launch with timeout
+timeout "$TIMEOUT_SECONDS" gemini --approval-mode yolo -m "$MODEL" \
   -p "$(cat task.md)" --output-format stream-json
 EXIT=$?
 
-OUTPUT_FILE="<project-root>/.ai-team/outputs/gemini-<id>-output.md"
+# 3. Read result from manifest.output_path and run manifest.verification_command
+OUTPUT_FILE="$OUTPUT_PATH"
 if   [ $EXIT -eq 0 ]   && [ -f "$OUTPUT_FILE" ]; then  # success
 elif [ $EXIT -eq 124 ]                                  ; then  # hung (rare in -p mode)
 else                                                            # failed / no output written
