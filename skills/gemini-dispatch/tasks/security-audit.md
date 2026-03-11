@@ -1,5 +1,5 @@
 <!-- WHEN TO USE: Use this when you need a deep security analysis of specific modules or the entire codebase. -->
-<!-- FILL IN: all [PLACEHOLDER] values before dispatching -->
+<!-- FILL IN: all [PLACEHOLDER: description] values before dispatching -->
 
 ## Task
 Audit the codebase for security vulnerabilities, focusing on [PLACEHOLDER: specific modules or concerns]. Perform a comprehensive check against OWASP Top 10 categories and project-specific risk vectors.
@@ -27,6 +27,11 @@ Use ripgrep to identify potential "hot spots" for manual review:
 - **Insecure UI (React/Vue):** `dangerouslySetInnerHTML|v-html`
 - **Missing Auth/Permission Hooks:** `\b(useAuth|isAuthenticated|requireAdmin)\b` (Search for absence in protected modules)
 
+## Constraints
+- Read and analyze files only — do not modify source code
+- Write output only to the path specified in the ## Output section
+- Do not ask for confirmation before writing the output file
+
 ## Output
 Write result to: [PLACEHOLDER: <project-root>/.ai-team/outputs/gemini-<task-id>-output.md]
 Format: markdown report with the following sections:
@@ -36,11 +41,11 @@ Format: markdown report with the following sections:
    - **Description:** What is the vulnerability?
    - **Location:** File path and line numbers.
    - **Proof of Concept:** Example of how it could be exploited.
-   - **Remediation:** Concrete steps to fix the issue.
-4. **General Recommendations:** Process-level improvements (e.g., "Add a linter rule for X").
+   - **Remediation Options:** Technical approaches with trade-offs to address the vulnerability, for Coordinator review.
+4. **Candidate Improvements:** Potential process-level changes or tools for the Coordinator to evaluate (e.g., "Consider a linter rule for X").
 
 ## Done When
 Output file exists at the specified path
 
 ## BEFORE YOU EXIT
-Your final action MUST be writing the output file. Do not ask for confirmation.
+Your final action MUST be writing the output file to the .ai-team/outputs/ path above. Do not ask for confirmation.

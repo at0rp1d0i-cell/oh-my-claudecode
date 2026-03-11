@@ -1,5 +1,5 @@
 <!-- WHEN TO USE: Dispatch this template when refactoring code to a defined pattern or structure without changing intended behavior. -->
-<!-- FILL IN: all [PLACEHOLDER] values before dispatching -->
+<!-- FILL IN: all [PLACEHOLDER: description] values before dispatching -->
 
 ## Task
 Refactor [PLACEHOLDER: scope/component] from [PLACEHOLDER: current pattern] to [PLACEHOLDER: target pattern].

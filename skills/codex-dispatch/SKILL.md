@@ -23,6 +23,11 @@ All Codex worker status files go to `<project-root>/.ai-team/outputs/`:
 - Task prompt files (`/tmp/task-<id>/`) stay in `/tmp` — coordinator-side temp only
 
 
+## Pre-Dispatch Checklist
+
+**Before dispatching:** Verify the filled prompt contains no remaining `[PLACEHOLDER: ...]` strings. A task sent with unfilled placeholders will silently fail or produce irrelevant output.
+
+
 ## Canonical Invocation
 
 ```bash

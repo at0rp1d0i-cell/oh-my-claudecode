@@ -1,5 +1,5 @@
 <!-- WHEN TO USE: Use this to understand high-level structure, identify technical debt, or verify adherence to architectural patterns. -->
-<!-- FILL IN: all [PLACEHOLDER] values before dispatching -->
+<!-- FILL IN: all [PLACEHOLDER: description] values before dispatching -->
 
 ## Task
 Analyze the codebase architecture, identify patterns and anti-patterns, specifically looking at [PLACEHOLDER: specific architectural concerns]. Focus on structural integrity, maintainability, and scalability.
@@ -27,6 +27,11 @@ Use ripgrep to identify structural issues:
 - **Large Logic Blocks (Switch Case):** `(switch|if|else if){5,}` (Looking for complex dispatching)
 - **Duplication (Manual Data Copy):** `\.map\(.*\{.*return\s*\{.*` (Identify manual object mapping that should be centralized)
 
+## Constraints
+- Read and analyze files only — do not modify source code
+- Write output only to the path specified in the ## Output section
+- Do not ask for confirmation before writing the output file
+
 ## Output
 Write result to: [PLACEHOLDER: <project-root>/.ai-team/outputs/gemini-<task-id>-output.md]
 Format: markdown report with the following sections:
@@ -34,10 +39,10 @@ Format: markdown report with the following sections:
 2. **Architecture Diagram:** A Mermaid-compatible text representation of the core module relationships.
 3. **Issues by Severity:** Categorized list of anti-patterns found (High/Medium/Low priority).
 4. **Positive Patterns:** Note what is working well and should be maintained.
-5. **Actionable Recommendations:** Specific refactoring steps with code snippet examples.
+5. **Candidate Actions:** A list of technical options with trade-offs, leaving the final choice to the Coordinator. Do not prescribe a single course of action.
 
 ## Done When
 Output file exists at the specified path
 
 ## BEFORE YOU EXIT
-Your final action MUST be writing the output file. Do not ask for confirmation.
+Your final action MUST be writing the output file to the .ai-team/outputs/ path above. Do not ask for confirmation.

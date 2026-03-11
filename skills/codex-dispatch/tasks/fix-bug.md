@@ -1,5 +1,5 @@
 <!-- WHEN TO USE: Dispatch this template when fixing a specific bug with known reproduction steps and expected behavior. -->
-<!-- FILL IN: all [PLACEHOLDER] values before dispatching -->
+<!-- FILL IN: all [PLACEHOLDER: description] values before dispatching -->
 
 ## Task
 Fix [PLACEHOLDER: bug description] so [PLACEHOLDER: corrected behavior after fix].

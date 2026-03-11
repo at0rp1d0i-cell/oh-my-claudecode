@@ -1,5 +1,5 @@
 <!-- WHEN TO USE: Use this when planning to refactor legacy code, switch frameworks, or modernize a specific subsystem. -->
-<!-- FILL IN: all [PLACEHOLDER] values before dispatching -->
+<!-- FILL IN: all [PLACEHOLDER: description] values before dispatching -->
 
 ## Task
 Analyze the legacy code and produce a structured migration plan for [PLACEHOLDER: source component/framework] to [PLACEHOLDER: target system]. Identify technical risks, breaking changes, and a phased implementation strategy.
@@ -26,12 +26,17 @@ Use ripgrep to identify migration targets and risks:
 - **Complex Side-Effects:** `\b(useEffect|hook|listener|onEvent|emitter\.on)\b` (Find reactive logic that might break)
 - **Environment Variables/Config:** `process\.env\.[A-Z0-9_]+` (Identify dependencies on specific runtime configs)
 
+## Constraints
+- Read and analyze files only — do not modify source code
+- Write output only to the path specified in the ## Output section
+- Do not ask for confirmation before writing the output file
+
 ## Output
 Write result to: [PLACEHOLDER: <project-root>/.ai-team/outputs/gemini-<task-id>-output.md]
 Format: markdown report with the following sections:
 1. **Current State Analysis:** Summary of the existing architecture and its limitations.
 2. **Risk Matrix:** A table evaluating risks by Impact and Probability.
-3. **Phased Implementation Plan:**
+3. **Candidate Implementation Strategy:** A phased roadmap showing technical dependencies and options, leaving final sequencing to the Coordinator.
    - **Phase 1 (Preparation):** Refactoring to isolate the legacy component.
    - **Phase 2 (Parallel Run/Beta):** Running both systems side-by-side if applicable.
    - **Phase 3 (Full Cutover):** Decommissioning the old system.
@@ -42,4 +47,4 @@ Format: markdown report with the following sections:
 Output file exists at the specified path
 
 ## BEFORE YOU EXIT
-Your final action MUST be writing the output file. Do not ask for confirmation.
+Your final action MUST be writing the output file to the .ai-team/outputs/ path above. Do not ask for confirmation.

@@ -99,7 +99,7 @@ Incoming task
   ├─ Requires web research (web_search + web_fetch)? → use :gemini worker
   ├─ Requires architectural decision or design?     → use analyst/architect Claude sub-agent (NOT external worker)
   ├─ Mixed: analyze then implement?
-  │     → Step 1: gemini-dispatch for analysis → write report to /tmp/
+  │     → Step 1: gemini-dispatch for analysis → write report to .ai-team/outputs/
   │     → Step 2: codex-dispatch for implementation using report as context
   └─ Default coding task → use :codex worker
 ```

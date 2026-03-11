@@ -23,6 +23,11 @@ All Gemini worker output files go to `<project-root>/.ai-team/outputs/`:
 - Gemini sandbox blocks `/tmp` writes; this path is always safe
 
 
+## Pre-Dispatch Checklist
+
+**Before dispatching:** Verify the filled prompt contains no remaining `[PLACEHOLDER: ...]` strings. A task sent with unfilled placeholders will silently fail or produce irrelevant output.
+
+
 ## Canonical Invocation
 
 ```bash

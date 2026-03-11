@@ -1,5 +1,5 @@
 <!-- WHEN TO USE: Dispatch this template when adding a new feature that extends existing product behavior. -->
-<!-- FILL IN: all [PLACEHOLDER] values before dispatching -->
+<!-- FILL IN: all [PLACEHOLDER: description] values before dispatching -->
 
 ## Task
 Implement [PLACEHOLDER: feature name] so [PLACEHOLDER: user-visible outcome].
