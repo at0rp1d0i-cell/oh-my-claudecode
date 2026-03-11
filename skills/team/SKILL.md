@@ -34,7 +34,7 @@ The `swarm` compatibility alias was removed in #1131.
 /team "refactor the auth module with security review"
 /team ralph "build a complete REST API for user management"
 # With Codex CLI workers (requires: npm install -g @openai/codex)
-/team 2:codex "review architecture and suggest improvements"
+/team 2:codex "refactor the payment module to use strategy pattern"
 # With Gemini CLI workers (requires: npm install -g @google/gemini-cli)
 /team 2:gemini "redesign the UI components"
 # Mixed: Codex for backend analysis, Gemini for frontend (use /ccg instead for this)
@@ -102,6 +102,24 @@ Incoming task
   │     → Step 1: gemini-dispatch for analysis → write report to .ai-team/outputs/
   │     → Step 2: codex-dispatch for implementation using report as context
   └─ Default coding task → use :codex worker
+
+After routing, optionally attach a Coworker review (codex-dispatch, gpt-5.4):
+
+  Plan Review (before execution) — attach when ANY of:
+  ├─ Plan touches 5+ files or crosses module boundaries
+  ├─ Plan involves security-sensitive code (auth, crypto, input validation)
+  ├─ Plan changes public API surface or data schema
+  └─ User explicitly requests review
+  → Coordinator reads verdict, adjusts plan if needed, then dispatches executor
+
+  Output Review (after execution) — attach when ANY of:
+  ├─ Executor reported "partial" or modified unexpected files
+  ├─ Changes touch security-sensitive or shared infrastructure code
+  ├─ Multiple workers ran in parallel (verify no conflicts)
+  └─ User explicitly requests review
+  → Coordinator reads verdict, decides accept / revise / escalate to user
+
+  Skip coworker when: single-file change, low-risk, well-tested area
 ```
 
 **When NOT to use external workers (codex/gemini):**

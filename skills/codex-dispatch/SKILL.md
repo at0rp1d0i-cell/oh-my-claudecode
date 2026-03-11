@@ -130,6 +130,27 @@ Write to <project-root>/.ai-team/outputs/codex-<task-id>-status.json:
 - Boilerplate generation (CRUD endpoints, scaffolding)
 - Adding features to existing well-structured code
 
+## Coworker Mode (Review Tasks)
+
+Codex can also serve as a **coworker** — an informed reviewer that reads the codebase and provides independent assessment. Unlike executor tasks, coworker tasks are **read-only** and produce a structured verdict.
+
+| Template | When | Input |
+|---|---|---|
+| `tasks/plan-review.md` | Before execution — validate a plan against real code | Coordinator's proposed plan + key files |
+| `tasks/output-review.md` | After execution — verify implementation quality | Worker's diff + original task intent |
+
+**Coworker vs Executor:**
+- Executor: "do this task" → produces code changes
+- Coworker: "evaluate this" → produces verdict + evidence (no file modifications)
+
+**Always use `gpt-5.4` with `xhigh` reasoning effort** for coworker tasks — they require deep reasoning about design trade-offs, not just code generation.
+
+```bash
+codex exec -m gpt-5.4 -c 'model_reasoning_effort="xhigh"' --full-auto --ephemeral ...
+```
+
+**Coworker output is advisory.** The Coordinator reads the verdict and decides the next step. `needs-discussion` means escalate to the user, not auto-reject.
+
 ## Task Types: Do NOT Send to Codex
 
 | Anti-pattern | Reason | Alternative |
@@ -146,6 +167,18 @@ Write to <project-root>/.ai-team/outputs/codex-<task-id>-status.json:
 |---|---|
 | `gpt-5.3-codex` | Default — high-volume coding, iteration, boilerplate |
 | `gpt-5.4` | Hard debugging, complex reasoning, architecture analysis |
+
+## Reasoning Effort
+
+Control thinking depth via `-c 'model_reasoning_effort="<level>"'`:
+
+| Level | Use when | Flag |
+|---|---|---|
+| `medium` | Simple, well-scoped tasks (rename, scaffold, boilerplate) | `-c 'model_reasoning_effort="medium"'` |
+| `high` | Default — standard coding tasks (feature, bug fix, refactor) | (config default, can omit) |
+| `xhigh` | **Coworker reviews**, complex debugging, architecture analysis | `-c 'model_reasoning_effort="xhigh"'` |
+
+**Rule of thumb:** executor tasks use `high` (default), coworker tasks use `xhigh`.
 
 ## Structured Output (Advanced)
 
