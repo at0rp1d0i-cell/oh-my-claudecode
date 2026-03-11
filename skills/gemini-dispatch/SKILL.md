@@ -12,7 +12,7 @@ Use this skill whenever you are about to dispatch a task to the Gemini CLI worke
 ```bash
 gemini \
   --approval-mode yolo \
-  -m gemini-2.5-pro \
+  -m gemini-3 \
   -p "$(cat task.md)" \
   --output-format stream-json
 ```
@@ -20,7 +20,7 @@ gemini \
 **Critical flags:**
 - `--approval-mode yolo` — fully autonomous; more reliable than `auto_edit` (known bug: `auto_edit` ignores allow-rules for shell tools)
 - `-p "<prompt>"` — non-interactive single-shot. **NEVER use `-i`** (`--prompt-interactive`) for worker dispatch — it requires a TTY
-- `-m gemini-2.5-pro` — always specify model explicitly; without this, Gemini may auto-switch from Pro to Flash mid-task (issue #8186)
+- `-m gemini-3` — always specify model explicitly (without this, Gemini may auto-switch mid-task)
 - `--output-format stream-json` — JSONL output; watch for `{"type":"result"}` event for completion
 
 ## GEMINI.md Configuration
@@ -74,22 +74,32 @@ Your final action MUST be writing the output file. Do not ask for confirmation.
 
 **Explicit file paths, not discovery:** Always provide exact paths — Gemini discovering files costs tokens and risks context overflow.
 
-## Large Context: Practical Patterns
+## Gemini's Actual Strength
 
-**Use read_many_files for batch loading:**
-Load all files at once — far more efficient than iterative read_file calls.
+Gemini's advantage is **loading the right files at once**, not "unlimited context".
 
-**Avoid patterns that overflow context:**
+| Zone | File count | Quality |
+|---|---|---|
+| Sweet spot | 20–50 explicitly named files | Excellent |
+| Acceptable | 50–100 files | Degrades noticeably |
+| Avoid | 100+ files / broad discovery | Unreliable |
+
+Long context does not mean better results — it means Gemini can handle more than other models before degrading. **Do not treat Gemini as a "dump everything in" solution.**
+
+**Practical rules:**
+- Provide explicit file paths — do not ask Gemini to discover what it needs
+- Use `read_many_files` for batch loading, not iterative `read_file` calls
+- One-shot prompt: every turn re-sends the full history (stateless API). A 10-turn conversation costs 10x turn-1 tokens.
+- Narrow ripgrep patterns when search is unavoidable: `grep --pattern "functionName" --glob "src/**/*.ts"`
+
+**What breaks Gemini:**
 ```
-# BAD — returns all file paths, overflows context
+# BAD — dumps all paths into context, causes overflow
 glob("**/*.ts")
 
-# GOOD — narrow and targeted
-grep --pattern "authenticate" --glob "src/**/*.ts"
+# GOOD — targeted load of known relevant files
+read_many_files(["src/auth/jwt.ts", "src/auth/middleware.ts", "tests/auth.test.ts"])
 ```
-
-**One-shot preferred over multi-turn:**
-Every conversation turn re-sends the ENTIRE history (APIs are stateless). A 10-turn conversation sends 10x the tokens of turn 1. Use one comprehensive prompt.
 
 ## Task Types: Send to Gemini
 
@@ -114,8 +124,8 @@ Every conversation turn re-sends the ENTIRE history (APIs are stateless). A 10-t
 
 | Model | Use when |
 |---|---|
-| `gemini-2.5-pro` | Complex reasoning, architecture review, precision matters |
-| `gemini-2.5-flash` | Structured extraction, fast summarization, web operations |
+| `gemini-3` | Default — complex reasoning, architecture review, large-context analysis |
+| `gemini-2.5` | Fallback — structured extraction, fast summarization |
 
 ## Critical Pitfalls
 
@@ -125,6 +135,30 @@ Every conversation turn re-sends the ENTIRE history (APIs are stateless). A 10-t
 4. **Model auto-switching mid-task** — specify `-m` explicitly, always.
 5. **GEMINI.md lost after `/clear`** — repeat critical constraints in every task prompt.
 6. **Stdin duplication bug** — use `-p "prompt"` rather than piping stdin.
+
+## Worker Lifecycle (Coordinator's View)
+
+Gemini `-p` mode always exits — it has no "hung" state. The only failure mode is writing output or not.
+
+```bash
+timeout 180 gemini --approval-mode yolo -m gemini-3 \
+  -p "$(cat task.md)" --output-format stream-json
+EXIT=$?
+
+OUTPUT_FILE="/tmp/gemini-<id>-output.md"
+if   [ $EXIT -eq 0 ]   && [ -f "$OUTPUT_FILE" ]; then  # success
+elif [ $EXIT -eq 124 ]                                  ; then  # hung (rare in -p mode)
+else                                                            # failed / no output written
+fi
+```
+
+**Recovery rules:**
+| Condition | Meaning | Action |
+|---|---|---|
+| Exit 0 + output file | Completed normally | Read output, continue |
+| Exit 0 + no output file | Forgot BEFORE YOU EXIT | Task likely done, output lost — retry with stricter prompt |
+| Exit 124 | Hung (prompt too complex) | Decompose task further, retry |
+| Non-zero exit | API error or crash | Check error message, retry once |
 
 ## Typical Collaboration Pattern
 
@@ -136,14 +170,3 @@ Every conversation turn re-sends the ENTIRE history (APIs are stateless). A 10-t
     ← reads codex status file
     → gemini-dispatch: "Review the diff produced by Codex and verify all issues are resolved"
 ```
-
-## Done When
-File exists at skills/gemini-dispatch/SKILL.md and starts with the frontmatter block.
-
-## BEFORE YOU EXIT
-Write to /tmp/codex-task2-status.json:
-{
-  "status": "success" or "failed",
-  "files_modified": ["skills/gemini-dispatch/SKILL.md"],
-  "summary": "created gemini-dispatch skill file"
-}

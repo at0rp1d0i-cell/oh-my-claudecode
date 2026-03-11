@@ -11,9 +11,8 @@ Use this skill whenever you are about to dispatch a task to the Codex CLI worker
 
 ```bash
 codex exec \
-  -m o4-mini \
-  -s workspace-write \
-  -a never \
+  -m gpt-5.3-codex \
+  --full-auto \
   --ephemeral \
   -C "$PROJECT_DIR" \
   --color never \
@@ -23,8 +22,7 @@ codex exec \
 
 **Every invocation MUST include:**
 - `--ephemeral` — prevents session conflicts when running parallel workers (without this, concurrent instances corrupt each other's sessions)
-- `-a never` — worker mode, never prompts for approval; any other value may block the process indefinitely
-- `-s workspace-write` — standard sandbox for coding tasks
+- `--full-auto` — fully autonomous worker mode (workspace-write sandbox + never prompts for approval; replaces `-a` and `-s` flags)
 - `--color never` — clean output for log parsing
 - `-C <absolute-path>` — always use absolute paths
 
@@ -59,38 +57,48 @@ Recommended structure:
 - Do not commit; leave changes staged for orchestrator review
 ```
 
-## Prompt Structure (Test-Anchored Pattern)
+## Prompt Philosophy
 
-Always use this structure for Codex tasks:
+**Give Codex intent, not steps. Trust it to decide HOW.**
+
+Codex has 200k context and full reasoning capability. A good prompt tells it:
+- **What** — one-sentence goal
+- **Where** — starting files (not exhaustive; Codex can explore from there)
+- **Boundary** — what not to touch
+- **Done When** — verifiable acceptance criteria
+
+A bad prompt writes out every step ("then open file X, then find function Y, then change line Z"). If your prompt contains the word "then", you're doing Codex's job for it.
+
+## Prompt Structure
 
 ```
 ## Task
-<one-sentence goal — be specific>
+<one-sentence goal>
 
 ## Context
-Files to look at:
+Starting files:
 - src/path/to/relevant-file.ts
 - tests/path/to/test-file.test.ts
 
 ## Constraints
 - Do not modify: tests/, config/production.json
 - Do not install new dependencies
-- Do not commit — leave changes staged
+- Leave changes staged, do not commit
 
 ## Done When
-`npm test -- -t '<exact test name>'` passes with 0 failures
+`npm test -- -t '<test name>'` passes
 
 ## BEFORE YOU EXIT
-Write to /tmp/codex-status-<task-id>.json:
+Write to /tmp/codex-<task-id>-status.json:
 {
   "status": "success" | "failed" | "partial",
-  "files_modified": ["list of relative paths"],
-  "summary": "one sentence describing what was done",
-  "blockers": "if failed: what prevented completion"
+  "files_modified": ["relative paths"],
+  "summary": "one sentence",
+  "blockers": "if failed: what blocked you"
 }
 ```
 
-**The `BEFORE YOU EXIT` section is mandatory.** Without it, Codex completes the task but never writes status, causing the orchestrator to hang.
+**`BEFORE YOU EXIT` is mandatory.** Without it, Codex completes silently and the orchestrator hangs waiting for a status file that never arrives.
 
 ## Task Types: Send to Codex
 
@@ -115,8 +123,8 @@ Write to /tmp/codex-status-<task-id>.json:
 
 | Model | Use when |
 |---|---|
-| `o4-mini` | Default — high-volume coding, iteration, boilerplate |
-| `o3` | Hard debugging, complex reasoning, architecture analysis |
+| `gpt-5.3-codex` | Default — high-volume coding, iteration, boilerplate |
+| `gpt-5.4` | Hard debugging, complex reasoning, architecture analysis |
 
 ## Structured Output (Advanced)
 
@@ -138,20 +146,39 @@ Schema example for test failure report:
 }
 ```
 
-## Multi-Agent Safety
+## Worker Lifecycle (Coordinator's View)
 
-- Always `--ephemeral` for parallel Codex instances
-- Each instance needs a unique status file path (use task-id in filename)
-- Set 5-minute heartbeat timeout — Codex has no built-in progress reporting
-- Start sequential, add parallelism incrementally to avoid quota drain
+Codex runs as a foreground process that exits when done. The coordinator's job:
 
-## Done When
-File exists at skills/codex-dispatch/SKILL.md and starts with the frontmatter block (--- name: codex-dispatch ---).
+```bash
+# 1. Write task
+echo "..." > /tmp/task-<id>/prompt.txt
 
-## BEFORE YOU EXIT
-Write to /tmp/codex-task1-status.json:
-{
-  "status": "success" or "failed",
-  "files_modified": ["skills/codex-dispatch/SKILL.md"],
-  "summary": "created codex-dispatch skill file"
-}
+# 2. Launch with timeout
+timeout 300 codex exec -m gpt-5.3-codex --full-auto --ephemeral \
+  -C "$PROJECT_DIR" --color never \
+  "$(cat /tmp/task-<id>/prompt.txt)"
+EXIT=$?
+
+# 3. Read result
+STATUS_FILE="/tmp/codex-<id>-status.json"
+if   [ $EXIT -eq 0 ]   && [ -f "$STATUS_FILE" ]; then  # success
+elif [ $EXIT -eq 124 ]                                  ; then  # hung — timeout killed it
+elif [ $EXIT -ne 0 ]   && [ -f "$STATUS_FILE" ]; then  # self-reported failure
+else                                                            # crash — no status written
+fi
+```
+
+**Recovery rules:**
+| Condition | Meaning | Action |
+|---|---|---|
+| Exit 0 + status file | Completed normally | Read status, continue |
+| Exit 0 + no status file | Forgot BEFORE YOU EXIT | Treat as partial, check git diff |
+| Exit 124 | Hung (timeout killed it) | Report to user, do not retry automatically |
+| Non-zero exit + status file | Self-reported failure | Read `blockers`, escalate to user |
+| Non-zero exit + no status file | Crashed mid-task | Report exit code, escalate to user |
+
+**Parallelism:**
+- Always `--ephemeral` for concurrent instances
+- Each needs a unique status file path (`/tmp/codex-<task-id>-status.json`)
+- Start with 1 worker, add parallelism only after confirming single-worker success
