@@ -17,7 +17,7 @@ Read the current project's CLAUDE.md for AI Team configuration. Run this at the 
 
 1. Read `CLAUDE.md` in the current working directory
 2. Find the `## AI Team` section (if present)
-3. Surface worker availability and routing rules to you (Claude coordinator)
+3. Surface which workers are enabled and what routing rules apply
 4. If no config found, offer to run onboarding
 
 ## Reading the Config
@@ -28,10 +28,10 @@ Look for this section in CLAUDE.md:
 ## AI Team
 
 ### Workers
-| Worker | Available | Strength |
-|--------|-----------|---------|
-| codex  | yes       | implementation, test-fix loops |
-| gemini | yes       | codebase analysis, large context |
+| Worker | Enabled | Strength |
+|--------|---------|---------|
+| codex  | yes     | implementation, test-fix loops |
+| gemini | no      | codebase analysis, large context |
 
 ### Routing Rules
 - Architecture analysis → gemini
@@ -44,13 +44,32 @@ Look for this section in CLAUDE.md:
 Report to the user:
 ```
 AI Team configured for this project:
-- codex: available (implementation, test-fix loops)
-- gemini: available (codebase analysis, large context)
+- codex: enabled (implementation, test-fix loops)
+- gemini: disabled
 
-Routing: architecture → gemini, features → codex, design → coordinator
+Routing: features → codex, design → coordinator
+Note: gemini is disabled — large-context analysis will stay with coordinator.
 ```
 
 Then apply these routing rules throughout the session.
+
+## Worker Enable/Disable
+
+Check the `Enabled` column for each worker:
+
+- `yes` — worker is available; route tasks to it per routing rules
+- `no` — worker is not installed or disabled for this project; skip entirely
+
+**Fallback rules when a worker is disabled:**
+
+| Disabled | Fallback |
+|----------|---------|
+| codex    | Use Claude internal sub-agent (executor role) for implementation tasks |
+| gemini   | Keep large-context analysis with Claude coordinator; do not route to codex |
+| both     | Full Claude-only mode; warn user that external worker orchestration is unavailable |
+
+If Gemini is disabled but a task clearly needs large-context analysis, say:
+> "Gemini is disabled for this project. I'll handle this analysis directly, but quality may be lower for very large codebases."
 
 ## If Config Not Found
 
@@ -79,32 +98,18 @@ Options:
 ## AI Team
 
 ### Workers
-| Worker | Available | Strength |
-|--------|-----------|---------|
-| codex  | yes       | [project-specific codex tasks] |
-| gemini | yes       | [project-specific gemini tasks] |
+| Worker | Enabled | Strength |
+|--------|---------|---------|
+| codex  | yes     | [project-specific codex tasks] |
+| gemini | yes     | [project-specific gemini tasks] |
 
 ### Routing Rules
 - [Task type] → [worker]
 - Design decisions → stay with Claude (never outsource)
 
 ### Codex Config
-Model: o4-mini
-Sandbox: workspace-write
+Model: gpt-5.3-codex
 
 ### Gemini Config
-Model: gemini-2.5-pro
+Model: gemini-3
 ```
-
-## Task: {{ARGUMENTS}}
-
-## Done When
-File exists at skills/team-config/SKILL.md and starts with the frontmatter block.
-
-## BEFORE YOU EXIT
-Write to /tmp/codex-task3-status.json:
-{
-  "status": "success" or "failed",
-  "files_modified": ["skills/team-config/SKILL.md"],
-  "summary": "created team-config skill file"
-}

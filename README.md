@@ -1,5 +1,15 @@
 English | [한국어](README.ko.md) | [中文](README.zh.md) | [日本語](README.ja.md) | [Español](README.es.md) | [Tiếng Việt](README.vi.md) | [Português](README.pt.md)
 
+---
+
+> **This is a fork** of [Yeachan-Heo/oh-my-claudecode](https://github.com/Yeachan-Heo/oh-my-claudecode) by [@at0rp1d0i-cell](https://github.com/at0rp1d0i-cell).
+>
+> **What's different:** Upstream OMC spawns Codex and Gemini as one-shot tmux workers. This fork teaches Claude *how* to use them optimally — with a decision framework, per-project team config, and worker-specific prompt strategies.
+>
+> See [Fork Changes](#fork-changes) for details.
+
+---
+
 # oh-my-claudecode
 
 [![npm version](https://img.shields.io/npm/v/oh-my-claude-sisyphus?color=cb3837)](https://www.npmjs.com/package/oh-my-claude-sisyphus)
@@ -134,6 +144,48 @@ If you experience issues after updating, clear the old plugin cache:
 ```bash
 /omc-doctor
 ```
+
+---
+
+## Fork Changes
+
+This fork adds a **worker intelligence layer** on top of OMC's tmux infrastructure. Upstream OMC runs Codex and Gemini as black-box workers; this fork gives Claude a structured decision framework for *when* and *how* to use them.
+
+### New Skills
+
+| Skill | Purpose |
+|-------|---------|
+| `skills/codex-dispatch/` | Canonical Codex invocation flags, prompt philosophy (intent not steps), lifecycle & recovery |
+| `skills/gemini-dispatch/` | Gemini sweet-spot guidance (20-50 files), pitfall avoidance, background mode |
+| `skills/team-config/` | Read per-project `## AI Team` config from CLAUDE.md; worker enable/disable |
+
+### New Agent Templates
+
+| File | Purpose |
+|------|---------|
+| `agents/codex.md` | Template for project `AGENTS.md` — persistent project context injected into Codex |
+| `agents/gemini.md` | Template for project `GEMINI.md` — behavioral constraints injected into Gemini |
+
+### New Project Templates
+
+`templates/teams/` — Pre-built AI Team config sections for web, ML, research, and CLI tool projects. Used by the `team-config` onboarding flow.
+
+### Key Design Decisions
+
+**Codex prompt philosophy:** Give intent, not steps. Codex has 200k context and full reasoning — tell it *what* and *where*, trust it to figure out *how*. Prompts containing "then" are doing Codex's job for it.
+
+**Gemini's actual strength:** Loading the right 20-50 files at once, not unlimited context. Quality degrades noticeably above 100 files. Provide explicit paths; do not ask Gemini to discover what it needs.
+
+**Worker lifecycle:** Two modes — foreground (< 2min, blocks Claude) and background (tmux, Claude continues). Both use `BEFORE YOU EXIT` status files for completion signaling.
+
+**Per-project team config:** Add `## AI Team` to your project's `CLAUDE.md` to declare which workers are enabled and how tasks should route. Workers can be individually disabled (e.g., Codex-only projects).
+
+### Unchanged from Upstream
+
+- All TypeScript source (`src/`) — no changes
+- OMC's tmux infrastructure — reused as-is for background workers
+- Existing Claude sub-agents in `agents/` (analyst, architect, debugger, etc.)
+- Package name, version, install flow
 
 <h1 align="center">Your Claude Just Have been Steroided.</h1>
 

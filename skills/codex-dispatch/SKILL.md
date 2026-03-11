@@ -182,3 +182,33 @@ fi
 - Always `--ephemeral` for concurrent instances
 - Each needs a unique status file path (`/tmp/codex-<task-id>-status.json`)
 - Start with 1 worker, add parallelism only after confirming single-worker success
+
+## Foreground vs Background Mode
+
+**Choose based on estimated task duration:**
+
+| Mode | When | How |
+|---|---|---|
+| Foreground | < 2 min, simple targeted task | `timeout 120 codex exec ...` — Claude blocks and waits |
+| Background | > 2 min, parallel work possible | tmux session — Claude continues other work, polls status |
+
+**Background launch (tmux):**
+```bash
+WORKER_ID="codex-$(date +%s)"
+tmux new-session -d -s "$WORKER_ID" \
+  "timeout 600 codex exec -m gpt-5.3-codex --full-auto --ephemeral \
+   -C '$PROJECT_DIR' --color never \
+   '$(cat /tmp/task-prompt.txt)'"
+```
+
+**Polling completion (check every ~30s):**
+```bash
+# Check if tmux session still alive
+tmux has-session -t "$WORKER_ID" 2>/dev/null && echo "running" || echo "exited"
+
+# Check for status file
+ls /tmp/codex-<task-id>-status.json 2>/dev/null
+```
+
+The session exits when Codex finishes. Status file appears if BEFORE YOU EXIT was followed.
+OMC's tmux infrastructure handles session naming and cleanup — reuse it rather than rolling your own.
