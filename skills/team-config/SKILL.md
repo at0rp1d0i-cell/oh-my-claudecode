@@ -86,11 +86,17 @@ Options:
 
 ## Setup Flow (when user chooses a template)
 
-1. Read the matching template from `templates/teams/<type>.md`
-2. Show the user what will be added to CLAUDE.md
-3. Ask for confirmation
-4. Append the `## AI Team` section to CLAUDE.md
-5. Confirm: "AI Team config added to CLAUDE.md"
+1. Check CLI availability:
+   - Run `codex --version` — if missing, mark codex as disabled
+   - Run `gemini --version` — if missing, mark gemini as disabled
+2. For each available CLI, ask the user for the model to use:
+   - "What Codex model should I use? (open `codex` and type `/model` to see your available options)"
+   - "What Gemini model should I use? (open `gemini` and type `/model` to see your available options)"
+   - Do NOT suggest specific model names — models change frequently and Claude's knowledge lags behind
+3. Show the user what will be added to CLAUDE.md
+4. Ask for confirmation
+5. Append the `## AI Team` section to CLAUDE.md
+6. Confirm: "AI Team config added to CLAUDE.md"
 
 ## CLAUDE.md Format for AI Team Section
 
@@ -108,8 +114,11 @@ Options:
 - Design decisions → stay with Claude (never outsource)
 
 ### Codex Config
-Model: gpt-5.3-codex
+Model: [user-specified — open `codex` and type `/model` to see available options]
 
 ### Gemini Config
-Model: gemini-3
+Model: [user-specified — open `gemini` and type `/model` to see available options]
+Note: Gemini model group selectors work in interactive mode only.
+      In non-interactive (-p) mode, omit -m to use the default auto model,
+      or verify the exact API model ID before hardcoding it.
 ```

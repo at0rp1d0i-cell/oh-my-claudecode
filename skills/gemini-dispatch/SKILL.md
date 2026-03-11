@@ -132,9 +132,11 @@ read_many_files(["src/auth/jwt.ts", "src/auth/middleware.ts", "tests/auth.test.t
 1. **Context overflow from broad search** — `glob("**/*.ts")` on a large repo dumps all paths into context. Always use narrow patterns.
 2. **Worker exits without writing output** — #1 cause of silent failures. Always include `BEFORE YOU EXIT`.
 3. **`ask_user` blocking** — even in yolo mode, Gemini may use `ask_user` if task is ambiguous. Forbid it in GEMINI.md.
-4. **Model auto-switching mid-task** — specify `-m` explicitly, always.
-5. **GEMINI.md lost after `/clear`** — repeat critical constraints in every task prompt.
-6. **Stdin duplication bug** — use `-p "prompt"` rather than piping stdin.
+4. **Model group selectors only work interactively** — `-m gemini-3` in `-p` mode causes ModelNotFoundError. Either omit `-m` (uses default auto model) or verify the exact API model ID first.
+5. **Model auto-switching mid-task** — when specifying `-m`, use an exact API model ID, not a group selector.
+6. **GEMINI.md lost after `/clear`** — repeat critical constraints in every task prompt.
+7. **Stdin duplication bug** — use `-p "prompt"` rather than piping stdin.
+8. **`/tmp` write restriction** — Gemini sandbox blocks writes to `/tmp`. Use the project workspace for output files (e.g. `.ai-team/outputs/`) or Gemini's own temp dir (`~/.gemini/tmp/<project>/`).
 
 ## Worker Lifecycle (Coordinator's View)
 
