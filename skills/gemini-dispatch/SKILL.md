@@ -7,6 +7,22 @@ description: Expert dispatch guide for Gemini CLI workers — optimal flags, pro
 
 Use this skill whenever you are about to dispatch a task to the Gemini CLI worker. It contains the canonical invocation template, GEMINI.md configuration, large-context best practices, and critical pitfalls.
 
+## Output Directory Convention
+
+All Gemini worker output files go to `<project-root>/.ai-team/outputs/`:
+
+```
+<project-root>/
+└── .ai-team/
+    └── outputs/
+        └── gemini-<task-id>-output.md
+```
+
+- Add `.ai-team/` to `.gitignore` — outputs are transient, not source
+- Coordinator always reads from this directory after worker completes
+- Gemini sandbox blocks `/tmp` writes; this path is always safe
+
+
 ## Canonical Invocation
 
 ```bash
@@ -147,7 +163,7 @@ timeout 180 gemini --approval-mode yolo -m gemini-3 \
   -p "$(cat task.md)" --output-format stream-json
 EXIT=$?
 
-OUTPUT_FILE="/tmp/gemini-<id>-output.md"
+OUTPUT_FILE="<project-root>/.ai-team/outputs/gemini-<id>-output.md"
 if   [ $EXIT -eq 0 ]   && [ -f "$OUTPUT_FILE" ]; then  # success
 elif [ $EXIT -eq 124 ]                                  ; then  # hung (rare in -p mode)
 else                                                            # failed / no output written
@@ -167,8 +183,8 @@ fi
 ```
 [Claude coordinator]
     → gemini-dispatch: "Analyze all files in src/auth/ and produce a security audit report"
-    ← reads /tmp/gemini-audit.md
-    → codex-dispatch: "Fix the 3 vulnerabilities identified in /tmp/gemini-audit.md"
+    ← reads <project-root>/.ai-team/outputs/gemini-audit.md
+    → codex-dispatch: "Fix the 3 vulnerabilities identified in <project-root>/.ai-team/outputs/gemini-audit.md"
     ← reads codex status file
     → gemini-dispatch: "Review the diff produced by Codex and verify all issues are resolved"
 ```

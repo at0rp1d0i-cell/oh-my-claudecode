@@ -28,7 +28,7 @@ Use ripgrep to identify potential "hot spots" for manual review:
 - **Missing Auth/Permission Hooks:** `\b(useAuth|isAuthenticated|requireAdmin)\b` (Search for absence in protected modules)
 
 ## Output
-Write result to: [PLACEHOLDER: /tmp/gemini-<task-id>-output.md]
+Write result to: [PLACEHOLDER: <project-root>/.ai-team/outputs/gemini-<task-id>-output.md]
 Format: markdown report with the following sections:
 1. **Executive Summary:** High-level risk posture.
 2. **Vulnerability Table:** Categorized by Severity (Critical, High, Medium, Low).

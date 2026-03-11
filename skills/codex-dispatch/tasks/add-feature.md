@@ -42,7 +42,7 @@ Starting files:
 - `[PLACEHOLDER: test command]` passes
 
 ## BEFORE YOU EXIT
-Write to /tmp/codex-[PLACEHOLDER: task-id]-status.json:
+Write to <project-root>/.ai-team/outputs/codex-[PLACEHOLDER: task-id]-status.json:
 {
   "status": "success" | "failed" | "partial",
   "files_modified": ["relative paths"],

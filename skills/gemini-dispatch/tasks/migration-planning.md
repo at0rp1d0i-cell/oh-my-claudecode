@@ -27,7 +27,7 @@ Use ripgrep to identify migration targets and risks:
 - **Environment Variables/Config:** `process\.env\.[A-Z0-9_]+` (Identify dependencies on specific runtime configs)
 
 ## Output
-Write result to: [PLACEHOLDER: /tmp/gemini-<task-id>-output.md]
+Write result to: [PLACEHOLDER: <project-root>/.ai-team/outputs/gemini-<task-id>-output.md]
 Format: markdown report with the following sections:
 1. **Current State Analysis:** Summary of the existing architecture and its limitations.
 2. **Risk Matrix:** A table evaluating risks by Impact and Probability.

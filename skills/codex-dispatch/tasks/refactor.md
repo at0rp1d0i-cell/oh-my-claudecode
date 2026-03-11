@@ -34,7 +34,7 @@ Starting files:
 - All existing tests still pass, including `[PLACEHOLDER: test command for full affected suite]`
 
 ## BEFORE YOU EXIT
-Write to /tmp/codex-[PLACEHOLDER: task-id]-status.json:
+Write to <project-root>/.ai-team/outputs/codex-[PLACEHOLDER: task-id]-status.json:
 {
   "status": "success" | "failed" | "partial",
   "files_modified": ["relative paths"],

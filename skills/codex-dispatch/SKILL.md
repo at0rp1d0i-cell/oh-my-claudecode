@@ -7,6 +7,22 @@ description: Expert dispatch guide for Codex CLI workers — optimal flags, prom
 
 Use this skill whenever you are about to dispatch a task to the Codex CLI worker. It contains the canonical invocation template, prompt structure, task suitability guidelines, and critical pitfalls.
 
+## Output Directory Convention
+
+All Codex worker status files go to `<project-root>/.ai-team/outputs/`:
+
+```
+<project-root>/
+└── .ai-team/
+    └── outputs/
+        └── codex-<task-id>-status.json
+```
+
+- Add `.ai-team/` to `.gitignore` — outputs are transient, not source
+- Coordinator always reads from this directory after worker completes
+- Task prompt files (`/tmp/task-<id>/`) stay in `/tmp` — coordinator-side temp only
+
+
 ## Canonical Invocation
 
 ```bash
@@ -89,7 +105,7 @@ Starting files:
 `npm test -- -t '<test name>'` passes
 
 ## BEFORE YOU EXIT
-Write to /tmp/codex-<task-id>-status.json:
+Write to <project-root>/.ai-team/outputs/codex-<task-id>-status.json:
 {
   "status": "success" | "failed" | "partial",
   "files_modified": ["relative paths"],
@@ -161,7 +177,7 @@ timeout 300 codex exec -m gpt-5.3-codex --full-auto --ephemeral \
 EXIT=$?
 
 # 3. Read result
-STATUS_FILE="/tmp/codex-<id>-status.json"
+STATUS_FILE="<project-root>/.ai-team/outputs/codex-<id>-status.json"
 if   [ $EXIT -eq 0 ]   && [ -f "$STATUS_FILE" ]; then  # success
 elif [ $EXIT -eq 124 ]                                  ; then  # hung — timeout killed it
 elif [ $EXIT -ne 0 ]   && [ -f "$STATUS_FILE" ]; then  # self-reported failure
@@ -180,7 +196,7 @@ fi
 
 **Parallelism:**
 - Always `--ephemeral` for concurrent instances
-- Each needs a unique status file path (`/tmp/codex-<task-id>-status.json`)
+- Each needs a unique status file path (`<project-root>/.ai-team/outputs/codex-<task-id>-status.json`)
 - Start with 1 worker, add parallelism only after confirming single-worker success
 
 ## Foreground vs Background Mode
@@ -207,7 +223,7 @@ tmux new-session -d -s "$WORKER_ID" \
 tmux has-session -t "$WORKER_ID" 2>/dev/null && echo "running" || echo "exited"
 
 # Check for status file
-ls /tmp/codex-<task-id>-status.json 2>/dev/null
+ls <project-root>/.ai-team/outputs/codex-<task-id>-status.json 2>/dev/null
 ```
 
 The session exits when Codex finishes. Status file appears if BEFORE YOU EXIT was followed.

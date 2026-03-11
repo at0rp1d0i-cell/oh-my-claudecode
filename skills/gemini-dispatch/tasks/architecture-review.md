@@ -28,7 +28,7 @@ Use ripgrep to identify structural issues:
 - **Duplication (Manual Data Copy):** `\.map\(.*\{.*return\s*\{.*` (Identify manual object mapping that should be centralized)
 
 ## Output
-Write result to: [PLACEHOLDER: /tmp/gemini-<task-id>-output.md]
+Write result to: [PLACEHOLDER: <project-root>/.ai-team/outputs/gemini-<task-id>-output.md]
 Format: markdown report with the following sections:
 1. **Component Overview:** Briefly describe the high-level components and their interactions.
 2. **Architecture Diagram:** A Mermaid-compatible text representation of the core module relationships.
