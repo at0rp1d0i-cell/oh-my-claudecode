@@ -88,6 +88,44 @@ User: "/team 3:executor fix all TypeScript errors"
     ...
 ```
 
+## Worker Routing Decision Tree
+
+Before spawning workers, apply this routing logic to select the right worker type:
+
+```
+Incoming task
+  ├─ Requires reading 20+ files or entire codebase? → use :gemini worker (invoke gemini-dispatch skill)
+  ├─ Requires write + test + fix iteration loop?    → use :codex worker (invoke codex-dispatch skill)
+  ├─ Requires web research (web_search + web_fetch)? → use :gemini worker
+  ├─ Requires architectural decision or design?     → use analyst/architect Claude sub-agent (NOT external worker)
+  ├─ Mixed: analyze then implement?
+  │     → Step 1: gemini-dispatch for analysis → write report to /tmp/
+  │     → Step 2: codex-dispatch for implementation using report as context
+  └─ Default coding task → use :codex worker
+```
+
+**When NOT to use external workers (codex/gemini):**
+- Brainstorming, design decisions → stay with Claude coordinator
+- Tasks requiring team communication protocol → use internal Claude sub-agents (executor, debugger, etc.)
+- Tasks spanning multiple repositories → split and sequence
+
+**Codex model:** `gpt-5.3-codex` (default), `gpt-5.4` (complex tasks)
+**Gemini model:** `gemini-3`
+
+## Project Team Config Check
+
+At the start of any `/team` invocation, check for project team configuration:
+
+1. Look for `## AI Team` section in `CLAUDE.md`
+2. If found: apply routing rules from config (project rules override defaults above)
+3. If not found: proceed with defaults; optionally suggest `/oh-my-claudecode:team-config` setup
+
+```bash
+grep -A 20 "## AI Team" CLAUDE.md 2>/dev/null || echo "No team config found"
+```
+
+---
+
 ## Staged Pipeline (Canonical Team Runtime)
 
 Team execution follows a staged pipeline:

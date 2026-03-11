@@ -49,3 +49,47 @@ gemini --version
 ```
 
 Task: {{ARGUMENTS}}
+
+## Optimal Invocation by Provider
+
+When routing to `codex` or `gemini`, always use these exact flags:
+
+### Codex
+```bash
+codex exec \
+  -m gpt-5.3-codex \
+  --full-auto \
+  --ephemeral \
+  -C "$PROJECT_DIR" \
+  --color never \
+  "$(cat prompt.txt)"
+```
+- `--full-auto`: workspace-write sandbox + on-request approval (no `-a` flag in exec mode)
+- `--ephemeral`: prevents session conflicts when running parallel instances
+- For complex tasks: use `-m gpt-5.4`
+- For structured output: add `--output-schema /path/to/schema.json`
+
+### Gemini
+```bash
+gemini \
+  --approval-mode yolo \
+  -m gemini-3 \
+  -p "$(cat prompt.txt)" \
+  --output-format stream-json
+```
+- Use `-p` not `-i` (`-i` requires TTY, not suitable for worker dispatch)
+- `--approval-mode yolo` is more reliable than `auto_edit` for autonomous use
+- Always specify `-m gemini-3` explicitly to prevent auto-switching mid-task
+
+## Quick Routing Guide
+
+| Task type | Route to |
+|---|---|
+| Read 20+ files, analyze entire codebase | `gemini` |
+| Implement feature, write + test + fix loop | `codex` |
+| Web research + synthesis | `gemini` |
+| Architecture review across many files | `gemini` |
+| Boilerplate, scaffolding, refactoring | `codex` |
+| Design decision, brainstorming | Stay with Claude coordinator |
+
+For full dispatch guides: invoke `codex-dispatch` or `gemini-dispatch` skills.
