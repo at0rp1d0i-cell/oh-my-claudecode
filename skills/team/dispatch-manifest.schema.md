@@ -6,7 +6,7 @@ The coordinator builds one dispatch manifest before every external worker launch
 
 ```json
 {
-  "task_id": "auth-audit-01",
+  "task_id": "team-routing-architecture-review-01",
   "provider": "gemini",
   "mode": "coworker",
   "model": "gemini-2.5-pro",
@@ -15,10 +15,10 @@ The coordinator builds one dispatch manifest before every external worker launch
     "/home/torpedo/Workspace/claude-exploring/oh-my-claudecode/skills/team/SKILL.md",
     "/home/torpedo/Workspace/claude-exploring/oh-my-claudecode/CLAUDE.md"
   ],
-  "output_path": "/home/torpedo/Workspace/claude-exploring/oh-my-claudecode/.ai-team/outputs/gemini-auth-audit-01-output.md",
+  "output_path": "/home/torpedo/Workspace/claude-exploring/oh-my-claudecode/.ai-team/outputs/gemini-team-routing-architecture-review-01-output.md",
   "timeout_seconds": 300,
-  "verification_command": "test -f /home/torpedo/Workspace/claude-exploring/oh-my-claudecode/.ai-team/outputs/gemini-auth-audit-01-output.md",
-  "template_used": "skills/gemini-dispatch/tasks/codebase-analysis.md"
+  "verification_command": "test -f /home/torpedo/Workspace/claude-exploring/oh-my-claudecode/.ai-team/outputs/gemini-team-routing-architecture-review-01-output.md",
+  "template_used": "skills/gemini-dispatch/tasks/architecture-review.md"
 }
 ```
 

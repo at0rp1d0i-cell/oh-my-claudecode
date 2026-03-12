@@ -160,6 +160,11 @@ Codex can also serve as a **coworker** — an informed reviewer that reads the c
 | `tasks/plan-review.md` | Before execution — validate a dispatch plan against real code | Completed dispatch manifest + referenced files |
 | `tasks/output-review.md` | After execution — verify implementation quality | Worker's diff + original task intent |
 
+Coworker template selection:
+- `plan-review.md`   → attach BEFORE execution when plan touches 5+ files, security-sensitive code, or public API
+- `output-review.md` → attach AFTER execution when worker modified unexpected files or output needs quality gate
+- `code-review.md`   → attach for standalone code review of an existing module/PR/changeset without a prior executor run
+
 **Coworker vs Executor:**
 - Executor: "do this task" → produces code changes
 - Coworker: "evaluate this" → produces verdict + evidence (no file modifications)

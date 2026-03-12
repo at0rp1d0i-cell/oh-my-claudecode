@@ -100,7 +100,7 @@ Incoming task
   ├─ Requires architectural decision or design?     → use analyst/architect Claude sub-agent (NOT external worker)
   ├─ Mixed: analyze then implement?
   │     → Step 1: gemini-dispatch for analysis → write report to <project-root>/.ai-team/outputs/
-  │     → Step 2: codex-dispatch for implementation using report as context
+  │     → Step 2: codex-dispatch for implementation using report as context (use skills/team/tasks/analysis-to-implementation-handoff.md to structure the Codex prompt)
   └─ Default coding task → use :codex worker
 
 After routing, optionally attach a Coworker review (codex-dispatch coworker task):
@@ -120,6 +120,17 @@ After routing, optionally attach a Coworker review (codex-dispatch coworker task
   → Coordinator reads verdict, decides accept / revise / escalate to user
 
   Skip coworker when: single-file change, low-risk, well-tested area
+
+  Coworker template selection:
+  ├─ `plan-review.md` before execution for 5+ files, security-sensitive work, or public API changes
+  ├─ `output-review.md` after execution for unexpected file changes or when output needs a quality gate
+  └─ `code-review.md` for standalone review of an existing module/PR/changeset without a prior executor run
+
+  Review authority order (when multiple lanes apply):
+  1. External worker review (Codex coworker or Gemini review) — technical detail, first
+  2. Internal team-verify (Claude agent) — final decision and escalation
+  External and internal reviews are additive, not interchangeable.
+  Codex coworker: code-local analysis. Gemini review: large-context or cross-file analysis.
 ```
 
 **When NOT to use external workers (codex/gemini):**

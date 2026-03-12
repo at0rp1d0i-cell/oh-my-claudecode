@@ -49,7 +49,7 @@ Diff baseline: `git diff [PLACEHOLDER: base-commit-sha]..HEAD -- <files above>`
 
 ## Done When
 - All 5 evaluation dimensions (Correctness, Scope Discipline, Convention Compliance, Test Coverage, Risks) addressed with specific file references
-- Verdict is set and supported by evidence in strengths/concerns
+- `findings_by_severity` addressed and verdict supported by evidence in strengths/findings_by_severity
 
 ## Output Format
 Write to <project-root>/.ai-team/outputs/codex-[PLACEHOLDER: task-id]-status.json:
@@ -61,13 +61,29 @@ Write to <project-root>/.ai-team/outputs/codex-[PLACEHOLDER: task-id]-status.jso
   "strengths": [
     "what the implementation gets right (with file:line evidence)"
   ],
-  "concerns": [
-    {
-      "issue": "specific problem found in the diff",
-      "evidence": "file:line or concrete observation",
-      "severity": "high | medium | low"
-    }
-  ],
+  "findings_by_severity": {
+    "high": [
+      {
+        "issue": "specific problem found in the diff",
+        "evidence": "file:line or concrete observation",
+        "impact": "why this matters"
+      }
+    ],
+    "medium": [
+      {
+        "issue": "important but non-blocking concern",
+        "evidence": "file:line or concrete observation",
+        "impact": "why this matters"
+      }
+    ],
+    "low": [
+      {
+        "issue": "minor concern or convention mismatch",
+        "evidence": "file:line or concrete observation",
+        "impact": "why this matters"
+      }
+    ]
+  },
   "suggestions": [
     {
       "what": "concrete improvement to the implementation",
@@ -75,7 +91,9 @@ Write to <project-root>/.ai-team/outputs/codex-[PLACEHOLDER: task-id]-status.jso
       "where": "affected files/sections"
     }
   ],
-  "scope_creep": ["list of changes that go beyond the original task intent, if any"],
+  "files_reviewed": [
+    "path/to/file-or-diff-the-review-actually-read"
+  ],
   "summary": "one-paragraph overall assessment"
 }
 ```

@@ -46,7 +46,7 @@ Evaluate the dispatch manifest below against the current codebase. Identify stre
 ## Done When
 - All 4 evaluation dimensions (Feasibility, Completeness, Design Fit, Risk) addressed with specific file references
 - Manifest-specific fields (`provider`, `mode`, `input_files`, `output_path`, `verification_command`, `template_used`) are either validated or challenged
-- Verdict is set and supported by evidence in strengths/concerns
+- `findings_by_severity` addressed and verdict supported by evidence in strengths/findings_by_severity
 
 ## Output Format
 Write to <project-root>/.ai-team/outputs/codex-[PLACEHOLDER: task-id]-status.json:
@@ -55,16 +55,33 @@ Write to <project-root>/.ai-team/outputs/codex-[PLACEHOLDER: task-id]-status.jso
   "status": "success",
   "files_modified": [],
   "verdict": "looks-good | needs-discussion | needs-rework",
+  "recommendation": "approve | revise | reject",
   "strengths": [
     "what the plan gets right (with file:line evidence)"
   ],
-  "concerns": [
-    {
-      "issue": "specific problem",
-      "evidence": "file:line, manifest field, or concrete observation",
-      "severity": "high | medium | low"
-    }
-  ],
+  "findings_by_severity": {
+    "high": [
+      {
+        "issue": "specific problem",
+        "evidence": "file:line, manifest field, or concrete observation",
+        "impact": "why this matters"
+      }
+    ],
+    "medium": [
+      {
+        "issue": "important but non-blocking concern",
+        "evidence": "file:line, manifest field, or concrete observation",
+        "impact": "why this matters"
+      }
+    ],
+    "low": [
+      {
+        "issue": "minor concern or cleanup item",
+        "evidence": "file:line, manifest field, or concrete observation",
+        "impact": "why this matters"
+      }
+    ]
+  },
   "suggestions": [
     {
       "what": "concrete improvement",

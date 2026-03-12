@@ -4,7 +4,9 @@ English | [한국어](README.ko.md) | [中文](README.zh.md) | [日本語](READM
 
 > **This is a fork** of [Yeachan-Heo/oh-my-claudecode](https://github.com/Yeachan-Heo/oh-my-claudecode) by [@at0rp1d0i-cell](https://github.com/at0rp1d0i-cell).
 >
-> **What's different:** Upstream OMC spawns Codex and Gemini as one-shot tmux workers. This fork teaches Claude *how* to use them optimally — with a decision framework, per-project team config, and worker-specific prompt strategies.
+> **What's different:** Upstream OMC spawns Codex and Gemini as one-shot tmux workers. This fork teaches Claude *how* to use them optimally — with a dispatch decision framework, structured coworker review, per-project team config, and worker-specific prompt strategies.
+>
+> **Prerequisites for fork features:** At least one of [`codex` CLI](https://github.com/openai/codex) or [`gemini` CLI](https://github.com/google-gemini/gemini-cli) must be installed. All other OMC features work without them.
 >
 > See [Fork Changes](#fork-changes) for details.
 
@@ -155,28 +157,40 @@ This fork adds a **worker intelligence layer** on top of OMC's tmux infrastructu
 
 | Skill | Purpose |
 |-------|---------|
-| `skills/codex-dispatch/` | Canonical Codex invocation flags, prompt philosophy (intent not steps), lifecycle & recovery |
-| `skills/gemini-dispatch/` | Gemini sweet-spot guidance (20-50 files), pitfall avoidance, background mode |
-| `skills/team-config/` | Read per-project `## AI Team` config from CLAUDE.md; worker enable/disable |
+| `skills/codex-dispatch/` | Codex invocation flags, executor vs coworker roles, prompt philosophy, lifecycle & recovery |
+| `skills/gemini-dispatch/` | Gemini sweet-spot guidance (20–50 files), pitfall avoidance, background mode |
+| `skills/team/` | Routing decision tree, coworker template selection matrix, review authority hierarchy |
 
-### New Agent Templates
+### New Task Templates
 
-| File | Purpose |
-|------|---------|
-| `agents/codex.md` | Template for project `AGENTS.md` — persistent project context injected into Codex |
-| `agents/gemini.md` | Template for project `GEMINI.md` — behavioral constraints injected into Gemini |
+| Template | Role | When to use |
+|----------|------|-------------|
+| `codex-dispatch/tasks/plan-review.md` | Coworker | Before execution — plan touches 5+ files or security-sensitive code |
+| `codex-dispatch/tasks/output-review.md` | Coworker | After execution — unexpected file changes or quality gate needed |
+| `codex-dispatch/tasks/code-review.md` | Coworker | Standalone review of an existing module or PR without a prior executor run |
+| `codex-dispatch/tasks/add-feature.md` | Executor | Targeted feature implementation |
+| `codex-dispatch/tasks/fix-bug.md` | Executor | Bug fix with test-fix loop |
+| `codex-dispatch/tasks/refactor.md` | Executor | Scoped refactor |
+| `gemini-dispatch/tasks/architecture-review.md` | Coworker | Large-context architecture analysis |
+| `gemini-dispatch/tasks/security-audit.md` | Coworker | Codebase-wide security review |
+| `gemini-dispatch/tasks/docs-synthesis.md` | Coworker | Synthesize documentation from scattered sources |
+| `team/tasks/analysis-to-implementation-handoff.md` | Reference | Structure Gemini analysis output into a Codex executor prompt |
 
-### New Project Templates
+### Dispatch Manifest
 
-`templates/teams/` — Pre-built AI Team config sections for web, ML, research, and CLI tool projects. Used by the `team-config` onboarding flow.
+`skills/team/dispatch-manifest.schema.md` — A lightweight JSON planning artifact the coordinator builds before every external worker launch. Keeps CLI parameters coordinator-owned and prevents ad-hoc dispatch drift.
 
 ### Key Design Decisions
 
-**Codex prompt philosophy:** Give intent, not steps. Codex has 200k context and full reasoning — tell it *what* and *where*, trust it to figure out *how*. Prompts containing "then" are doing Codex's job for it.
+**Coworker vs Executor:** Codex runs in two modes. Executor modifies files. Coworker is read-only and returns a structured verdict (`looks-good / needs-discussion / needs-rework`) with severity-grouped findings. All coworker templates share a common JSON output contract.
 
-**Gemini's actual strength:** Loading the right 20-50 files at once, not unlimited context. Quality degrades noticeably above 100 files. Provide explicit paths; do not ask Gemini to discover what it needs.
+**Codex prompt philosophy:** Give intent, not steps. Tell Codex *what* and *where*; trust it to figure out *how*. Prompts containing "then" are doing Codex's job for it.
 
-**Worker lifecycle:** Two modes — foreground (< 2min, blocks Claude) and background (tmux, Claude continues). Both use `BEFORE YOU EXIT` status files for completion signaling.
+**Gemini's actual strength:** Loading the right 20–50 files at once, not unlimited context. Provide explicit paths; do not ask Gemini to discover what it needs.
+
+**Review authority order:** External worker review (Codex coworker or Gemini) runs first for technical detail. Internal `team-verify` (Claude agent) runs last for final decision and escalation. They are additive, not interchangeable.
+
+**Worker lifecycle:** Background workers run in tmux with heartbeat status files. `BEFORE YOU EXIT` at the end of every prompt forces status write-back.
 
 **Per-project team config:** Add `## AI Team` to your project's `CLAUDE.md` to declare which workers are enabled and how tasks should route. Workers can be individually disabled (e.g., Codex-only projects).
 

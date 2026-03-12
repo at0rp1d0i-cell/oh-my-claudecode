@@ -3,21 +3,20 @@
   "name": "omc",
   "description": "Claude Code native multi-agent orchestration - intelligent model routing, 28 agents, 32 skills",
   "owner": {
-    "name": "Yeachan Heo",
-    "email": "hurrc04@gmail.com"
+    "name": "at0rp1d0i-cell",
+    "email": ""
   },
   "plugins": [
     {
       "name": "oh-my-claudecode",
-      "description": "Claude Code native multi-agent orchestration with intelligent model routing, 28 agent variants, and 32 powerful skills. Zero learning curve. Maximum power.",
+      "description": "Claude Code native multi-agent orchestration with Codex/Gemini dispatch framework, coworker review, and project-level AI team config. Forked from Yeachan-Heo/oh-my-claudecode.",
       "version": "4.7.9",
       "author": {
-        "name": "Yeachan Heo",
-        "email": "hurrc04@gmail.com"
+        "name": "at0rp1d0i-cell"
       },
       "source": "./",
       "category": "productivity",
-      "homepage": "https://github.com/Yeachan-Heo/oh-my-claudecode",
+      "homepage": "https://github.com/at0rp1d0i-cell/oh-my-claudecode",
       "tags": [
         "multi-agent",
         "orchestration",
